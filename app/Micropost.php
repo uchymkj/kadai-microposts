@@ -12,4 +12,18 @@ class Micropost extends Model
     {
         return $this->belongsTo(User::class);
     }
+    
+    
+    
+    public function Postfollowings()
+    {
+        return $this->belongsToMany(Micropost::class, 'micropost_follow', 'user_id', 'micropost_id')->withTimestamps();
+    }
+    
+    
+    public function Postfollowers()
+    {
+        return $this->belongsToMany(User::class, 'micropost_follow', 'micropost_id', 'user_id')->withTimestamps();
+    }
+    
 }

@@ -76,7 +76,7 @@ class User extends Model implements AuthenticatableContract,
         // 自分自身ではないかの確認
         $its_me = $this->id == $userId;
         
-        if ($exist && !$its_me) {
+        if ($exist || $its_me) {
             // 既にフォローしていればフォローを外す
             $this->followings()->detach($userId);
             return true;
@@ -90,10 +90,65 @@ class User extends Model implements AuthenticatableContract,
         return $this->followings()->where('follow_id', $userId)->exists();
     }
     
+    
+    public function is_Postfollowing($micropostId) {
+        return $this->Postfollowings()->where('micropost_id', $micropostId)->exists();
+    }
+    
     public function feed_microposts()
     {
         $follow_user_ids = $this->followings()->lists('users.id')->toArray();
         $follow_user_ids[] = $this->id;
         return Micropost::whereIn('user_id', $follow_user_ids);
     }
+    
+    
+    public function Postfollowings()
+    {
+        return $this->belongsToMany(Micropost::class, 'micropost_follow', 'user_id', 'micropost_id')->withTimestamps();
+    }
+    
+    public function Postfollowers()
+    {
+        return $this->belongsToMany(User::class, 'micropost_follow', 'micropost_id', 'user_id')->withTimestamps();
+    }
+    
+    
+
+    
+    public function Postfollow($micropostId)
+    {
+        // 既にフォローしているかの確認
+        $exist = $this->is_following($micropostId);
+        // 自分自身ではないかの確認
+        //$its_me = $this->id == $micropostId;
+        
+        if ($exist) {
+            // 既にフォローしていれば何もしない
+            return false;
+        } else {
+            // 未フォローであればフォローする
+            $this->Postfollowings()->attach($micropostId);
+            return true;
+        }
+    }
+    
+    public function Postunfollow($micropostId)
+    {
+        // 既にフォローしているかの確認
+        $exist = $this->is_Postfollowing($micropostId);
+        // 自分自身ではないかの確認
+        //$its_me = $this->id == $micropostId;
+        
+        if ($exist) {
+            // 既にフォローしていればフォローを外す
+            $this->Postfollowings()->detach($micropostId);
+            return true;
+        } else {
+            // 未フォローであれば何もしない
+            return false;
+        }
+    }
+    
+    
 }
